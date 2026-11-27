@@ -111,10 +111,9 @@ BOOL PreferenceTabMain::OnInitDialog( HWND hwndFocus, LPARAM lParam )
     }
     DoFullDdxToUi();
 
-    // Disable duration options, since they are currently not implemented by Discord API
     for ( auto id: { IDC_RADIO_TIME_ELAPSED, IDC_RADIO_TIME_REMAINING, IDC_RADIO_TIME_DISABLED } )
     {
-        CButton( GetDlgItem( id ) ).EnableWindow( false );
+        CButton( GetDlgItem( id ) ).EnableWindow( true );
     }
 
     CButton( GetDlgItem( IDC_CHECK_FETCH_ALBUM_ART ) ).EnableWindow( !isAlbumArtFetchOverriden_ );
@@ -123,7 +122,7 @@ BOOL PreferenceTabMain::OnInitDialog( HWND hwndFocus, LPARAM lParam )
     helpUrl_.SetToolTipText( L"Title formatting help" );
     helpUrl_.SubclassWindow( GetDlgItem( IDC_LINK_FORMAT_HELP ) );
 
-    return TRUE; // set focus to default control
+    return TRUE;
 }
 
 void PreferenceTabMain::OnDdxUiChange( UINT uNotifyCode, int nID, CWindow wndCtl )

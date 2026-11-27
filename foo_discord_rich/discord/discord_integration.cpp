@@ -15,15 +15,12 @@ DiscordAdapter& DiscordAdapter::GetInstance()
 
 void DiscordAdapter::Initialize()
 {
-    // migrate old settings
     if ( config::bottomTextQuery_v1_deprecated.GetValue() != config::bottomTextQuery_v1_deprecated.GetDefaultValue() )
     {
         config::bottomTextQuery = config::bottomTextQuery_v1_deprecated.GetValue();
         config::middleTextQuery = "";
         config::bottomTextQuery_v1_deprecated = config::bottomTextQuery_v1_deprecated.GetDefaultValue();
     }
-    // currently not working with `Listening to` style
-    config::timeSettings = config::TimeSetting::Disabled;
 
     appToken_ = config::discordAppToken;
 
@@ -36,11 +33,11 @@ void DiscordAdapter::Initialize()
     Discord_Initialize( appToken_.c_str(), &handlers, 1, nullptr );
     Discord_RunCallbacks();
 
-    hasPresence_ = true; ///< Discord may use default app handler, which we need to override
+    hasPresence_ = true;
 
     auto pm = GetPresenceModifier();
     pm.UpdateImage();
-    pm.Disable(); ///< we don't want to activate presence yet
+    pm.Disable();
 }
 
 void DiscordAdapter::Finalize()

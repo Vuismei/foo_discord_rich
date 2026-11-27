@@ -1,0 +1,110 @@
+﻿---
+BasedOnStyle: Mozilla
+AccessModifierOffset: '-4'
+AlwaysBreakAfterDefinitionReturnType: 'false'
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: None
+AlignConsecutiveMacros: Consecutive
+AlignEscapedNewlines: Left
+AlignOperands: Align
+AllowShortBlocksOnASingleLine: 'false'
+AllowShortCaseLabelsOnASingleLine: 'false'
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: 'false'
+AllowShortLambdasOnASingleLine: All
+AllowShortLoopsOnASingleLine: 'false'
+AlwaysBreakAfterReturnType: None
+AlwaysBreakTemplateDeclarations: 'true'
+BinPackParameters: 'true'
+BreakAfterAttributes: Leave
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: 'true'
+  AfterClass: 'true'
+  AfterControlStatement: Always
+  AfterEnum: 'true'
+  AfterFunction: 'true'
+  AfterNamespace: 'true'
+  AfterObjCDeclaration: 'true'
+  AfterStruct: 'true'
+  AfterUnion: 'true'
+  AfterExternBlock: 'true'
+  BeforeCatch: 'true'
+  BeforeElse: 'true'
+  BeforeLambdaBody: 'false'
+  BeforeWhile: 'false'
+  IndentBraces: 'false'
+  SplitEmptyFunction: 'true'
+  SplitEmptyRecord: 'true'
+  SplitEmptyNamespace: 'true'
+BreakBeforeInheritanceComma: 'true'
+BreakConstructorInitializers: BeforeComma
+ColumnLimit: '0'
+ConstructorInitializerIndentWidth: '4' 
+ContinuationIndentWidth: '4'
+Cpp11BracedListStyle: 'false'
+EmptyLineBeforeAccessModifier: Always
+FixNamespaceComments: 'true'
+IncludeBlocks: Regroup
+IncludeCategories: 
+  # precompiled headers
+  - Regex:           '^<stdafx.h|pch.h|precompiled.h>'
+    Priority:        -1
+  # "header"
+  - Regex:           '"[[:alnum:]_]+'
+    Priority:        1
+  # <dependency/header>
+  - Regex:           '^<(acfu-sdk|columns_ui-sdk|fmt|foobar2000|nlohmann|nonstd|pfc|qwr|range|tim)/'
+    Priority:        4 
+  # <dependency_header>
+  - Regex:           '^<(atl.*\.h)>'
+    Priority:        5
+  # <subdir/header.h>|<subdir/header.hpp>
+  - Regex:           '<[[:alnum:]_]+/.+\.(h|hpp)>'
+    Priority:        2
+  # <header.h>|<header.hpp>
+  - Regex:           '<[[:alnum:]_]+\.(h|hpp)>'
+    Priority:        3
+  # <header>
+  - Regex:           '<[[:alnum:]_]+>'
+    Priority:        6
+IncludeIsMainRegex: '$'
+IndentCaseLabels: 'false'
+IndentPPDirectives: AfterHash
+IndentRequiresClause: 'true'
+IndentWidth: '4'
+IndentWrappedFunctionNames: 'false'
+InsertNewlineAtEOF: 'true'
+LambdaBodyIndentation: Signature
+Language: Cpp
+LineEnding: CRLF
+MacroBlockBegin: "^BEGIN_*"
+MacroBlockEnd: "^END_*"
+MaxEmptyLinesToKeep: '1'
+PackConstructorInitializers: Never
+PointerAlignment: Left
+ReflowComments: 'true'
+RequiresClausePosition: OwnLine
+RequiresExpressionIndentation: OuterScope
+SeparateDefinitionBlocks: Always
+SpaceAfterCStyleCast: 'false'
+SpaceAfterTemplateKeyword : 'true'
+SpaceBeforeAssignmentOperators: 'true'
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: 'false'
+SpaceInEmptyParentheses: 'false'
+SpacesInAngles: 'false'
+SpacesInCStyleCastParentheses: 'false'
+SpacesInLineCommentPrefix:
+  Minimum: 1
+  Maximum: 1
+SpacesInParentheses: 'true'
+SpacesInSquareBrackets: 'false'
+SortIncludes: 'true'
+Standard: c++20
+TabWidth: '4'
+TypenameMacros: ['STDMETHOD', 'STDMETHODIMP_']
+UseTab: Never
+
+...

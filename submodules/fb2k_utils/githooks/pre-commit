@@ -1,0 +1,46 @@
+#!/bin/sh
+
+BINARY=$(git config --get clangformat.binary)
+if [ -n "${BINARY}" ] ; then
+  BINARY_ARG="${BINARY}"
+else
+  BINARY_ARG='C:/Program Files/LLVM/bin/clang-format.exe'
+fi
+
+STYLE=$(git config --get clangformat.style)
+if [ -n "${STYLE}" ] ; then
+  STYLE_ARG="--style=${STYLE}"
+else
+  STYLE_ARG='--style=file'
+fi
+
+EXTENSIONS=$(git config --get clangformat.extensions)
+if [ -n "${EXTENSIONS}" ] ; then
+  EXTENSIONS_ARG="${EXTENSIONS}"
+else
+  EXTENSIONS_ARG='c,cpp,h,hpp'
+fi
+
+EXTENSIONS_ARG=`echo ${EXTENSIONS_ARG} | sed -r 's/,/|/g'`
+
+format_file() {
+  file="${1}"
+  if [ -f $file ]; then
+    if ! `"${BINARY_ARG}" -i ${STYLEARG} ${1}`; then
+        echo "clang-format failed"
+        exit 1
+    fi
+    git add ${1}
+  fi
+}
+
+case "${1}" in
+  --about )
+    echo "Runs clang-format on source files"
+    ;;
+  * )
+    for file in `git diff-index --cached --name-only HEAD | grep -iE "\.(${EXTENSIONS_ARG})$"` ; do
+      format_file "${file}"
+    done
+    ;;
+esac

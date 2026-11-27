@@ -15,17 +15,27 @@
 #include <qwr/thread_name_setter.h>
 #include <qwr/visitor.h>
 
+#include <unordered_map>
+
 namespace fs = std::filesystem;
 
 namespace
 {
 
-const std::chrono::seconds kRequestProcessingDelay{ 2 };
+const std::chrono::milliseconds kRequestProcessingDelay{ 300 };
+const std::chrono::seconds kFailureCooldown{ 45 };
 
+std::unordered_map<qwr::u8string, std::chrono::steady_clock::time_point> g_failedCooldownMap;
+
+bool IsValidHttpUrl( const std::optional<qwr::u8string>& urlOpt )
+{
+    return urlOpt.has_value() && urlOpt->starts_with( "https://" );
 }
 
-namespace
+bool IsPermanentUrl( const std::optional<qwr::u8string>& urlOpt )
 {
+    return IsValidHttpUrl( urlOpt ) && urlOpt->find( "litter.catbox.moe" ) == qwr::u8string::npos;
+}
 
 qwr::u8string GenerateMusicBrainzArtPinId( const qwr::u8string& artist, const qwr::u8string& album )
 {
@@ -55,7 +65,7 @@ bool IsRequestExecutable( const drp::ArtworkFetcher::FetchRequest& request )
 {
     return std::visit(
         qwr::Visitor{
-            []( const drp::ArtworkFetcher::MusicBrainzFetchRequest& req ) {
+            []( const drp::ArtworkFetcher::MusicBrainzFetchRequest& /*req*/ ) {
                 return true;
             },
             []( const drp::ArtworkFetcher::UploadRequest& req ) {
@@ -95,19 +105,29 @@ std::optional<qwr::u8string> ArtworkFetcher::GetArtUrl( const FetchRequest& requ
         return std::nullopt;
     }
 
-    if ( const auto artUrlOpt = qwr::FindOrDefault( artPinIdToArtUrl_, *artPinIdOpt, std::nullopt );
-         artUrlOpt )
-    {
-        return artUrlOpt;
-    }
-
-    if ( !IsRequestExecutable( request ) )
-    {
-        return std::nullopt;
-    }
-
     {
         std::unique_lock lock( mutex_ );
+
+        if ( const auto it = artPinIdToArtUrl_.find( *artPinIdOpt );
+             it != artPinIdToArtUrl_.end() && IsValidHttpUrl( it->second ) )
+        {
+            return it->second;
+        }
+
+        if ( !IsRequestExecutable( request ) )
+        {
+            return std::nullopt;
+        }
+
+        if ( const auto failIt = g_failedCooldownMap.find( *artPinIdOpt );
+             failIt != g_failedCooldownMap.end() )
+        {
+            if ( std::chrono::steady_clock::now() < failIt->second )
+            {
+                return std::nullopt;
+            }
+            g_failedCooldownMap.erase( failIt );
+        }
 
         currentRequestOpt_ = request;
         cv_.notify_all();
@@ -129,7 +149,20 @@ void ArtworkFetcher::LoadCache( bool throwOnError )
         }
 
         const auto content = qwr::file::ReadFile( cachePath, CP_UTF8 );
-        json::parse( content ).get_to( artPinIdToArtUrl_ );
+        decltype( artPinIdToArtUrl_ ) loadedMap;
+        json::parse( content ).get_to( loadedMap );
+
+        std::unique_lock lock( mutex_ );
+        artPinIdToArtUrl_.clear();
+        g_failedCooldownMap.clear();
+
+        for ( auto& [key, valOpt] : loadedMap )
+        {
+            if ( !key.empty() && IsPermanentUrl( valOpt ) )
+            {
+                artPinIdToArtUrl_.emplace( std::move( key ), std::move( valOpt ) );
+            }
+        }
     }
     catch ( const qwr::QwrException& e )
     {
@@ -163,10 +196,22 @@ void ArtworkFetcher::SaveCache()
 
     try
     {
+        decltype( artPinIdToArtUrl_ ) cleanSnapshot;
+        {
+            std::unique_lock lock( mutex_ );
+            for ( const auto& [key, valOpt] : artPinIdToArtUrl_ )
+            {
+                if ( !key.empty() && IsPermanentUrl( valOpt ) )
+                {
+                    cleanSnapshot.emplace( key, valOpt );
+                }
+            }
+        }
+
         const auto cachePath = GetCacheFilePath();
         fs::create_directories( cachePath.parent_path() );
 
-        const auto content = json( artPinIdToArtUrl_ ).dump( 2 );
+        const auto content = json( cleanSnapshot ).dump( 2 );
         qwr::file::WriteFile( cachePath, content, false );
     }
     catch ( const qwr::QwrException& e )
@@ -200,6 +245,7 @@ void ArtworkFetcher::StopThread()
     if ( pThread_ )
     {
         pThread_->request_stop();
+        cv_.notify_all();
         pThread_.reset();
     }
 }
@@ -211,12 +257,16 @@ void ArtworkFetcher::ThreadMain()
 
     while ( !token.stop_requested() )
     {
-        std::optional<qwr::u8string> mbidOpt;
         {
             std::unique_lock lock( mutex_ );
             cv_.wait_for( lock, kRequestProcessingDelay, [&] {
                 return token.stop_requested() || lastRequest != currentRequestOpt_;
             } );
+
+            if ( token.stop_requested() )
+            {
+                return;
+            }
 
             if ( currentRequestOpt_ )
             {
@@ -230,7 +280,7 @@ void ArtworkFetcher::ThreadMain()
             }
 
             if ( lastRequest != currentRequestOpt_ )
-            { // user requested new art, wait again
+            {
                 lastRequest = currentRequestOpt_;
                 continue;
             }
@@ -243,28 +293,39 @@ void ArtworkFetcher::ThreadMain()
 
         auto artUrlOpt = std::visit( [&]( const auto& arg ) { return ProcessFetchRequest( arg ); }, *lastRequest );
         if ( !artUrlOpt && ( qwr::GlobalAbortCallback::GetInstance().is_aborting() || token.stop_requested() ) )
-        { // do not save nullopt if interrupted, because it might actually had the image
+        {
             return;
         }
 
         if ( artUrlOpt && qwr::unicode::ToWide( *artUrlOpt ).length() > 254 )
-        { // Discord API max image key size
+        {
             LogError( fmt::format( "Failed to process art url `{}`:\nlength is bigger than 254", *artUrlOpt ) );
             artUrlOpt.reset();
         }
 
         const auto artPinIdOpt = GenerateArtPinId( *lastRequest );
         assert( artPinIdOpt );
+
+        bool shouldPersistCache = false;
         {
             std::unique_lock lock( mutex_ );
 
-            artPinIdToArtUrl_.try_emplace( *artPinIdOpt, artUrlOpt );
+            if ( IsValidHttpUrl( artUrlOpt ) )
+            {
+                artPinIdToArtUrl_.insert_or_assign( *artPinIdOpt, artUrlOpt );
+                g_failedCooldownMap.erase( *artPinIdOpt );
+                shouldPersistCache = IsPermanentUrl( artUrlOpt );
+            }
+            else
+            {
+                g_failedCooldownMap[ *artPinIdOpt ] = std::chrono::steady_clock::now() + kFailureCooldown;
+            }
 
             if ( lastRequest == currentRequestOpt_ )
             {
                 currentRequestOpt_.reset();
 
-                if ( artUrlOpt )
+                if ( IsValidHttpUrl( artUrlOpt ) )
                 {
                     fb2k::inMainThread( [] {
                         auto pm = DiscordAdapter::GetInstance().GetPresenceModifier();
@@ -273,6 +334,11 @@ void ArtworkFetcher::ThreadMain()
                 }
             }
             lastRequest.reset();
+        }
+
+        if ( shouldPersistCache )
+        {
+            SaveCache();
         }
     }
 }

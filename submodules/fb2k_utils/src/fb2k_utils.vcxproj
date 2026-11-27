@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <RootNamespace>fb2k_utils</RootNamespace>
+    <WindowsTargetPlatformVersion>10</WindowsTargetPlatformVersion>
+    <ProjectGuid>{EE3BF4F9-2014-4CFF-96C8-44CFB85E0571}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(ProjectDir)..\props\env\BuildEnvCommon.props" />
+    <Import Project="$(ProjectDir)..\props\env\BuildEnvCpp.props" />
+    <Import Project="$(ProjectDir)..\props\env\StaticRuntime.props" />
+    <Import Project="$(ProjectDir)..\props\local\submodules.props" />
+    <Import Project="$(ProjectDir)..\props\submodules\fmt.props" />
+    <Import Project="$(ProjectDir)..\props\submodules\foobar2000_sdk.props" />
+    <Import Project="$(ProjectDir)..\props\submodules\json.props" />
+    <Import Project="$(ProjectDir)..\props\submodules\range.props" />
+    <Import Project="$(ProjectDir)..\props\submodules\pfc.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup>
+    <CAExcludePath>$(IncludePath);$(CAExcludePath)</CAExcludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>_WINDOWS;_USRDLL;_SILENCE_CXX20_U8PATH_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zm200 /Zc:__cplusplus /Zc:char8_t- %(AdditionalOptions)</AdditionalOptions>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <DisableSpecificWarnings>5105</DisableSpecificWarnings>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <ConformanceMode>true</ConformanceMode>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+    </ClCompile>
+    <Link>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>_CRT_NON_CONFORMING_SWPRINTFS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FloatingPointModel>Fast</FloatingPointModel>
+    </ClCompile>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+    </ResourceCompile>
+    <Link>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+    <Link>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ItemGroup>
+    <ClCompile Include="qwr\abort_callback.cpp" />
+    <ClCompile Include="qwr\acfu_integration.cpp" />
+    <ClCompile Include="qwr\fb2k_paths.cpp" />
+    <ClCompile Include="qwr\delayed_executor.cpp" />
+    <ClCompile Include="qwr\error_popup.cpp" />
+    <ClCompile Include="qwr\file_helpers.cpp" />
+    <ClCompile Include="qwr\hook_handler.cpp" />
+    <ClCompile Include="qwr\pfc_helpers_cfg.cpp" />
+    <ClCompile Include="qwr\pfc_helpers_stream.cpp" />
+    <ClCompile Include="qwr\semantic_version.cpp" />
+    <ClCompile Include="qwr\string_helpers.cpp" />
+    <ClCompile Include="qwr\text_helpers.cpp" />
+    <ClCompile Include="qwr\thread_name_setter.cpp" />
+    <ClCompile Include="qwr\thread_pool.cpp" />
+    <ClCompile Include="qwr\ui_centered_message_box.cpp" />
+    <ClCompile Include="qwr\unicode.cpp" />
+    <ClCompile Include="qwr\winapi_error_helpers.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="qwr\abort_callback.h" />
+    <ClInclude Include="qwr\acfu_github.h" />
+    <ClInclude Include="qwr\acfu_integration.h" />
+    <ClInclude Include="qwr\algorithm.h" />
+    <ClInclude Include="qwr\com_ptr.h" />
+    <ClInclude Include="qwr\enum_bitmask_ops.hpp" />
+    <ClInclude Include="qwr\fb2k_adv_config.h" />
+    <ClInclude Include="qwr\fb2k_config_ui_option.h" />
+    <ClInclude Include="qwr\fb2k_paths.h" />
+    <ClInclude Include="qwr\delayed_executor.h" />
+    <ClInclude Include="qwr\error_popup.h" />
+    <ClInclude Include="qwr\file_helpers.h" />
+    <ClInclude Include="qwr\final_action.h" />
+    <ClInclude Include="qwr\hook_handler.h" />
+    <ClInclude Include="qwr\macros.h" />
+    <ClInclude Include="qwr\not_null.h" />
+    <ClInclude Include="qwr\pfc_helpers_cfg.h" />
+    <ClInclude Include="qwr\thread_pool.h" />
+    <ClInclude Include="qwr\type_traits.h" />
+    <ClInclude Include="qwr\ui_centered_message_box.h" />
+    <ClInclude Include="qwr\ui_option.h" />
+    <ClInclude Include="qwr\fb2k_config.h" />
+    <ClInclude Include="qwr\pfc_helpers_cnt.h" />
+    <ClInclude Include="qwr\pfc_helpers_stream.h" />
+    <ClInclude Include="qwr\pfc_helpers_ui.h" />
+    <ClInclude Include="qwr\qwr_exception.h" />
+    <ClInclude Include="qwr\semantic_version.h" />
+    <ClInclude Include="qwr\string_helpers.h" />
+    <ClInclude Include="qwr\text_helpers.h" />
+    <ClInclude Include="qwr\thread_name_setter.h" />
+    <ClInclude Include="qwr\ui_ddx.h" />
+    <ClInclude Include="qwr\ui_ddx_option.h" />
+    <ClInclude Include="qwr\unicode.h" />
+    <ClInclude Include="qwr\unordered_map.h" />
+    <ClInclude Include="qwr\utility.h" />
+    <ClInclude Include="qwr\visitor.h" />
+    <ClInclude Include="qwr\winapi_error_helpers.h" />
+    <ClInclude Include="stdafx.h" />
+  </ItemGroup>
+</Project>

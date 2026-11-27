@@ -149,7 +149,6 @@ PresenceModifier::~PresenceModifier()
 void PresenceModifier::UpdateImage()
 {
     auto& pd = presenceData_;
-    auto pc = playback_control::get();
 
     auto setImageKey = [&pd]( const qwr::u8string& imageKey ) {
         pd.largeImageKey = imageKey;
@@ -157,7 +156,6 @@ void PresenceModifier::UpdateImage()
     };
 
     const auto artUrlOpt = [&]() -> std::optional<qwr::u8string> {
-        // TODO: extract to separate method
         const auto metadb = pd.metadb;
         if ( metadb.is_empty() )
         {
@@ -165,8 +163,7 @@ void PresenceModifier::UpdateImage()
         }
 
         if ( config::enableArtUpload )
-        { // overrides art fetching
-            const auto albumId = EvaluateQueryForPlayingTrack( metadb, config::artUploadPinQuery );
+        {
             const ArtworkFetcher::UploadRequest request{
                 .artPinId = EvaluateQueryForPlayingTrack( metadb, config::artUploadPinQuery ),
                 .handle = metadb,
@@ -254,7 +251,7 @@ void PresenceModifier::UpdateTrack( metadb_handle_ptr metadb )
     pd.trackLength = 0;
 
     if ( metadb.is_valid() )
-    { // Need to save, since refresh might be required when settings are changed
+    {
         pd.metadb = metadb;
     }
 
@@ -262,14 +259,13 @@ void PresenceModifier::UpdateTrack( metadb_handle_ptr metadb )
         return EvaluateQueryForPlayingTrack( metadb, query );
     };
     const auto fixStringLength = []( qwr::u8string& str ) {
-        // Discord uses utf16 when applying text length limits
         auto strW = qwr::unicode::ToWide( str );
         if ( strW.size() == 1 )
-        { // minimum allowed non-zero string length is 2, so we need to pad it.
+        {
             strW += ' ';
         }
         else if ( strW.size() > 127 )
-        { // maximum allowed length is 127
+        {
             strW.resize( 124 );
             strW += L"...";
         }
@@ -295,28 +291,29 @@ void PresenceModifier::UpdateDuration( double currentTime )
 {
     auto& pd = presenceData_;
     auto pc = playback_control::get();
-    const config::TimeSetting timeSetting = ( ( pd.trackLength && pc->is_playing() && !pc->is_paused() ) ? config::timeSettings : config::TimeSetting::Disabled );
+    const config::TimeSetting timeSetting = ( ( pd.trackLength > 0 && pc->is_playing() && !pc->is_paused() ) ? config::timeSettings : config::TimeSetting::Disabled );
+    const int64_t now = static_cast<int64_t>( std::time( nullptr ) );
+    const int64_t elapsedSec = std::llround( currentTime );
+    const int64_t totalSec = std::llround( pd.trackLength );
+
     switch ( timeSetting )
     {
     case config::TimeSetting::Elapsed:
     {
-        pd.presence.startTimestamp = std::time( nullptr ) - std::llround( currentTime );
-        pd.presence.endTimestamp = 0;
-
+        pd.presence.startTimestamp = now - elapsedSec;
+        pd.presence.endTimestamp = ( totalSec > 0 ) ? ( pd.presence.startTimestamp + totalSec ) : 0;
         break;
     }
     case config::TimeSetting::Remaining:
     {
         pd.presence.startTimestamp = 0;
-        pd.presence.endTimestamp = std::time( nullptr ) + std::max<uint64_t>( 0, std::llround( pd.trackLength - currentTime ) );
-
+        pd.presence.endTimestamp = now + std::max<int64_t>( 0, totalSec - elapsedSec );
         break;
     }
     case config::TimeSetting::Disabled:
     {
         pd.presence.startTimestamp = 0;
         pd.presence.endTimestamp = 0;
-
         break;
     }
     }
